@@ -1,0 +1,96 @@
+---
+title: "Assignment 2"
+author: "sai prasad desineni"
+date: "2/20/2022"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup}
+
+
+ #installing packages
+  
+library('caret')
+library('ISLR')
+library('dplyr')
+library('class')
+
+#importing the csv file
+  
+bank = read.csv("C:\\Users\\desineni\\Desktop\\UniversalBank.csv")
+  
+summary(bank)
+bank$ZIP.Code <- NULL  
+bank$ID <- NULL
+summary(bank)
+
+
+#normalization of data
+bank$Personal.Loan = as.factor(bank$Personal.Loan)
+
+summary(bank)
+
+Model_range_normalized <- preProcess(bank[,-8], method = "range")
+bank_norm = predict(Model_range_normalized,bank)
+summary(bank_norm)
+View(bank_norm)
+
+
+#splitting of data into trainset and test set
+Train_index <- createDataPartition(bank$Personal.Loan, p = 0.6, list = FALSE)
+train.df = bank_norm[Train_index,]
+validation.df = bank_norm[-Train_index,]
+print(validation.df)
+pairs(validation.df)
+
+#task-1 - Prediction k value
+To_Predict = data.frame(Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education = 1, Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1, CreditCard = 1)
+print(To_Predict)
+Prediction <- knn(train = train.df[,1:7], test = To_predict_norm[,1:7], cl = train.df$Personal.Loan, k = 1)
+print(Prediction)
+
+
+#Task 2 balance between overfitting and underfitting
+set.seed(123)
+bankcontrol <- trainControl(method = "repeatedcv", number = 3, repeats = 2)
+searchGrid = expand.grid(k=1:10)
+
+knn.model = train(Personal.Loan~., data = train.df, method = 'knn', tuneGrid = searchGrid, trControl = bankcontrol)
+knn.model
+
+#Task 3 confusion matrix
+predictions <- predict(knn.model, validation.df)
+confusionMatrix(predictions, validation.df$Personal.Loan)
+
+#Task 4 classifying the sameple using k value
+To_Predict_norm = data.frame(Age = 40, Experience = 10, Income = 84, family = 2, CCAvg = 2, Education = 1, Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1, CreditCard = 1)
+To_Predict_norm = predict(Model_range_normalized, To_Predict)
+predict(knn.model, To_Predict_norm)
+
+#Task 5
+train_size = 0.5
+Train_index = createDataPartition(bank$Personal.Loan, p = 0.5, list = FALSE)
+train.df = bank_norm[Train_index,]
+
+test_size = 0.2
+Test_index = createDataPartition(bank$Personal.Loan, p = 0.2, list = FALSE)
+Test.df = bank_norm[Train_index,]
+
+valid_size = 0.3
+validation_index =  createDataPartition(bank$Personal.Loan, p = 0.3, list = FALSE)
+validation.df = bank_norm[validation_index,]
+
+Trainknn = knn(train=train.df[,-8], test = train.df[,-8], cl = train.df[,8], k =1)
+Testknn <- knn(train = train.df[,-8], test = Test.df[,-8], cl = train.df[,8], k =1)
+Validationknn <- knn(train = train.df[,-8], test = validation.df[,-8], cl = train.df[,8], k =1)
+
+confusionMatrix(Trainknn, train.df[,8])
+confusionMatrix(Testknn, Test.df[,8])  
+confusionMatrix(Validationknn, validation.df[,8])
+#comment - the training and  the test results are identical. this represents that the model  is properly trained and is just doing what its supposed to. This is a good sign because there's no overfitting in this case.
+
+
+```
+

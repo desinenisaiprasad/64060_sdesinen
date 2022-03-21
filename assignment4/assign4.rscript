@@ -1,0 +1,96 @@
+---
+title: "assign4"
+author: "sai prasad desineni"
+date: "3/21/2022"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+#loading all the required packages
+
+
+library(tidyverse)
+library(factoextra)
+library(ISLR)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(cluster)
+
+#importing the csv file
+
+pharma = read.csv("C:\\Users\\desineni\\Downloads\\Pharmaceuticals.csv")
+View(pharma)
+
+#task A
+#removing the missing values that might be present in the data
+pharma = na.omit(pharma)
+
+#collecting the numerical variables from 1-9 columns
+row.names(pharma) = pharma[,1]
+p1 = pharma[,3:11]
+head(p1)
+
+#using scale function to scale the data
+df = scale(p1)
+head(df)
+
+#computing the k-means custering for different values of k
+kmeans = kmeans(df,centers = 2,nstart = 30)
+kmeans = kmeans(df,centers = 5,nstart = 30)
+kmeans = kmeans(df,centers = 6,nstart = 30)
+plot1 = fviz_cluster(kmeans,data = df)+ggtitle("k = 2")
+plot2 = fviz_cluster(kmeans,data = df)+ggtitle("k = 5")
+plot3 = fviz_cluster(kmeans,data = df)+ggtitle("k = 6")
+grid.arrange(plot1,plot2,plot3,nrow=2)
+
+#using the eblow method to decide the optimal value of k
+distance = dist(df, method = "euclidean")
+fviz_dist(distance)
+
+#
+set.seed(64060)
+wss = function(k){kmeans(df, k, nstart =10)$tot.withinss}
+k.values = 1:10
+wss_clusters = map_dbl(k.values, wss)
+plot(k.values, wss_clusters,type="b", pch = 16, frame = TRUE,
+     xlab="Number of clusters",ylab="Total within-clusters sum of squares")
+fviz_nbclust(df,kmeans,method = "silhouette")+labs(subtitle = "silhouette method")
+
+#Extracting results using 5 clusters and Visualize the results
+
+
+set.seed(64060)
+final = kmeans(df, 5, nstart = 25)
+print(final)
+
+fviz_cluster(final, data = df)
+p1%>%
+  mutate(Cluster = final$cluster) %>%
+  group_by(Cluster)%>% summarise_all("mean")
+clusplot(df,final$cluster, color = TRUE, labels = 2,lines = 0)
+
+#Task b
+#cluster1-AHM,ABT,AZN,BMY,LLY,NVS,SGP,WYE
+#cluster2-GSK,MRK,PFE,
+#cluster3-AVE,CHTT,ELN,IVX,MRX,WPI
+#cluster4-AGN,BAY,PHA
+ClusterForm<- pharma[,c(12,13,14)]%>% mutate(clusters = final$cluster)%>%
+  arrange(clusters, ascending = TRUE)
+ClusterForm
+
+#task c- is there a pattern in the clusters with respect to numerical variables(10-12)?
+p1<-ggplot(ClusterForm, mapping = aes(factor(clusters), fill=Median_Recommendation))+geom_bar(position = 'dodge')+labs(x ='Number of clusters')
+p2<- ggplot(ClusterForm, mapping = aes(factor(clusters),fill = Location))+geom_bar(position = 'dodge')+labs(x ='Number of clusters')
+p3<- ggplot(ClusterForm, mapping = aes(factor(clusters),fill =Exchange))+geom_bar(position = 'dodge')+labs(x ='Number of clusters')
+grid.arrange(p1,p2,p3) 
+#as per the graph produced above the following are the suggestions cluster1- suggests to hold , cluster2- suggests to hold and moderately buy , cluster3- suggests to moderately sell and moderately buy , cluster4- suggests to hold and moderately sell , cluster5- suggests to hold and moderately buy
+
+#TASK D- providing an appropriate name for each cluster
+#cluster1- clench cluster, cluster2- purchasing cluster , cluster3- examination cluster ,cluster4-  investment cluster,cluster5- contemplating cluster
+
+
+
+```

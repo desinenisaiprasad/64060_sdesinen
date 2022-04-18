@@ -1,0 +1,130 @@
+---
+title: "Assignment 5"
+author: "sai prasad desineni"
+date: "4/17/2022"
+output: pdf_document
+---
+```{r}
+#loading all the required libraries
+library(factoextra)
+library(dendextend)
+library(cluster)
+library(tidyverse)
+library(knitr)
+```
+
+
+```{r}
+#importing the data
+cereals = read_csv("C:/Users/desineni/Downloads/Cereals.csv")
+numericaldata = data.frame(cereals[,4:16])
+```
+
+
+```{r}
+#omitting all the missing values present in the data
+OmitMissing = na.omit(numericaldata)
+
+```
+
+
+```{r}
+#normalizing and scaling the data
+Normalise = scale(OmitMissing)
+```
+
+
+```{r}
+#measuring the distance using the euclidian distance and computing the dissimilarity matrix
+distance = dist(Normalise, method = "euclidian")
+```
+
+
+```{r}
+#performing hierarchial clustering using complete linkage and representing in plot
+hierarchial_clustering = hclust(distance,method = "complete")
+plot(hierarchial_clustering)
+```
+
+
+```{r}
+#rounding off the decimals
+round(hierarchial_clustering$height, 3)
+```
+
+
+```{r}
+#determining the optimla clusters and highlighting with colours
+plot(hierarchial_clustering)
+rect.hclust(hierarchial_clustering,k = 4, border = "red")
+```
+
+
+```{r}
+#performing clustering using AGNES
+HCsingle = agnes(Normalise, method = "single")
+HCcomplete = agnes(Normalise, method = "complete")
+HCaverage = agnes(Normalise, method = "average")
+HCward = agnes(Normalise, method = "ward")
+```
+
+```{r}
+#comparing the agglomerative cosfficients of single , complete, average, ward
+print(HCsingle$ac)
+print(HCcomplete$ac)
+print(HCaverage$ac)
+print(HCward$ac)
+#according to the above values, wards method is the best with the value of 0.904.plotting ward using agnes and the dendogram
+pltree(HCward, cex = 0.6, hang = -1, main = "Dendrogram of agnes-Ward")
+
+```
+```{r}
+#using the ward method for hierarchial clustering
+HC1 <- hclust(distance, method = "ward.D2" )
+subgrp <- cutree(HC1, k = 4)
+table(subgrp)
+cereals <- as.data.frame(cbind(Normalise,subgrp))
+```
+
+
+```{r}
+#visualising the results on scatterplot
+fviz_cluster(list(data = Normalise, cluster = subgrp))
+```
+
+
+```{r}
+#selecting the best breakfast cereal cluster with high protein, fibre and low in sugar and sodium.
+#choosing the healthy cereal cluster
+Newdatacereals = numericaldata
+Newdatacereals_omit = na.omit(Newdatacereals)
+Clust = cbind(Newdatacereals_omit, subgrp)
+Clust[Clust$subgrp==1,]
+```
+
+```{r}
+Clust[Clust$subgrp==2,]
+```
+
+
+```{r}
+Clust[Clust$subgrp==3,]
+```
+
+
+```{r}
+Clust[Clust$subgrp==4,]
+```
+```{r}
+#here we calculate the mean rating in order determine the healthy cluster cereals
+mean(Clust[Clust$subgrp==1,"rating"])
+mean(Clust[Clust$subgrp==2,"rating"])
+mean(Clust[Clust$subgrp==3,"rating"])
+mean(Clust[Clust$subgrp==4,"rating"])
+#From the above results it is clearly evident that mean rating is highest for subgroup 1.
+#so, it is recommended to choose subgrp 1 as the healthy diet cluster.
+```
+
+
+
+
